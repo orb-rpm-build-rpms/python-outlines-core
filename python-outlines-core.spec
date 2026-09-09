@@ -9,7 +9,8 @@ Summary:        Structured Text Generation in Rust
 License:        Apache-2.0
 URL:            https://github.com/dottxt-ai/outlines-core
 Source:         %{pypi_source outlines_core}
-# Drop the unused, unpackaged optional serde-pyobject crate from the manifest.
+# Trim the python-bindings feature: drop the unused/unpackaged serde-pyobject
+# crate and pyo3/generate-import-lib (a Windows-only pyo3 feature Fedora strips).
 Patch:          drop-serde-pyobject.patch
 
 BuildRequires:  python3-devel

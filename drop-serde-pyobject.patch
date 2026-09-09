@@ -1,11 +1,18 @@
-Drop the optional serde-pyobject dependency.
+Trim the "python-bindings" feature to what Fedora's pyo3 provides.
 
-serde-pyobject is declared as an optional dependency and pulled in by the
-"python-bindings" feature, but it is never referenced anywhere in the source
-(no `use serde_pyobject`, no `serde_pyobject::` calls). Fedora does not package
-it. Because `cargo metadata` (run by maturin during the build) resolves every
-optional dependency regardless of which features are enabled, the crate has to
-be removed from the manifest entirely, not merely left disabled.
+Two unnecessary items are removed from the manifest:
+
+* serde-pyobject: declared optional and pulled in by "python-bindings", but
+  never referenced anywhere in the source (no `use serde_pyobject`, no
+  `serde_pyobject::` calls), and not packaged in Fedora. Since `cargo metadata`
+  (run by maturin during the build) resolves every optional dependency
+  regardless of which features are enabled, the crate has to be removed from
+  the manifest entirely, not merely left disabled.
+
+* pyo3/generate-import-lib: generates a Windows import library and is a
+  MinGW/MSVC-only feature that Fedora's pyo3 package strips, so
+  crate(pyo3/generate-import-lib) is not provided. It is not needed for a
+  native Linux build.
 
 --- a/Cargo.toml
 +++ b/Cargo.toml
@@ -22,7 +29,7 @@ be removed from the manifest entirely, not merely left disabled.
  [features]
  default = ["hugginface-hub"]
 -python-bindings = ["pyo3", "pyo3/generate-import-lib", "serde-pyobject"]
-+python-bindings = ["pyo3", "pyo3/generate-import-lib"]
++python-bindings = ["pyo3"]
  hugginface-hub = ["hf-hub", "tokenizers/http",  "tokenizers/rustls-tls"]
  
  [lib]
