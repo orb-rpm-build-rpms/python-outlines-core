@@ -29,9 +29,9 @@ Summary:        %{summary}
 
 %description -n python3-outlines-core %_description
 
-# For official Fedora packages, review which extras should be actually packaged
-# See: https://docs.fedoraproject.org/en-US/packaging-guidelines/Python/#Extras
-%pyproject_extras_subpkg -n python3-outlines-core test
+# The "test" extra is the upstream benchmark/test suite (torch, numba, scipy,
+# asv, pre-commit, ...); none of it is packaged here and %check only does an
+# import check, so the extra is not built as a subpackage.
 
 
 %prep
@@ -41,8 +41,9 @@ Summary:        %{summary}
 
 
 %generate_buildrequires
-# Keep only those extras which you actually want to package or use during tests
-%pyproject_buildrequires -x test
+# No extras: the "test" extra pulls heavy, unpackaged benchmark deps (asv,
+# numba, torch, ...) and %check only imports the module.
+%pyproject_buildrequires
 # pyo3 is an *optional* crate, pulled in only by the "python-bindings" feature
 # that [tool.maturin] builds with. Pass -f so its crate BuildRequires (and
 # pyo3's own deps) are emitted and installed before maturin runs cargo metadata.
