@@ -8,10 +8,15 @@ Summary:        Structured Text Generation in Rust
 # https://docs.fedoraproject.org/en-US/packaging-guidelines/LicensingGuidelines/
 License:        Apache-2.0
 URL:            https://github.com/dottxt-ai/outlines-core
-Source:         %{pypi_source outlines_core}
-# Trim the python-bindings feature: drop the unused/unpackaged serde-pyobject
-# crate and pyo3/generate-import-lib (a Windows-only pyo3 feature Fedora strips).
-Patch:          drop-serde-pyobject.patch
+Source0:        %{pypi_source outlines_core}
+# Vendored Rust dependencies. outlines-core pins pyo3 0.27, hf-hub 0.4.1 and
+# tokenizers 0.22.2 -- all present in Fedora only at other versions. Rather than
+# build each on a release branch, the whole crate graph is built offline from a
+# vendor tarball. It is not shipped in a lookaside cache: rust-sources.sh
+# regenerates it with `cargo vendor` at build time (see that script). Building
+# against the real upstream pyo3 0.27 also means the manifest's serde-pyobject
+# and pyo3/generate-import-lib both resolve, so no manifest patch is needed.
+Source1:        outlines_core-%{version}-vendor.tar.xz
 
 BuildRequires:  python3-devel
 BuildRequires:  gcc
@@ -35,19 +40,19 @@ Summary:        %{summary}
 
 
 %prep
-%autosetup -p1 -n outlines_core-%{version}
-# Rust bindings: resolve crates against Fedora's packaged registry (offline).
-%cargo_prep
+# -a1 unpacks the vendor tarball (Source1) into the source tree as ./vendor.
+%autosetup -p1 -n outlines_core-%{version} -a1
+# Build the Rust crate graph from the vendored sources, fully offline. This
+# replaces the cargo buildrequires generator: no per-crate BuildRequires are
+# needed because every dependency is supplied by ./vendor.
+%cargo_prep -v vendor
 
 
 %generate_buildrequires
 # No extras: the "test" extra pulls heavy, unpackaged benchmark deps (asv,
-# numba, torch, ...) and %check only imports the module.
+# numba, torch, ...) and %check only imports the module. The Rust deps come from
+# the vendor tree, so the cargo buildrequires generator is intentionally absent.
 %pyproject_buildrequires
-# pyo3 is an *optional* crate, pulled in only by the "python-bindings" feature
-# that [tool.maturin] builds with. Pass -f so its crate BuildRequires (and
-# pyo3's own deps) are emitted and installed before maturin runs cargo metadata.
-%cargo_generate_buildrequires -f python-bindings
 
 
 %build
