@@ -9,6 +9,8 @@ Summary:        Structured Text Generation in Rust
 License:        Apache-2.0
 URL:            https://github.com/dottxt-ai/outlines-core
 Source:         %{pypi_source outlines_core}
+# Drop the unused, unpackaged optional serde-pyobject crate from the manifest.
+Patch:          drop-serde-pyobject.patch
 
 BuildRequires:  python3-devel
 BuildRequires:  gcc
@@ -40,7 +42,10 @@ Summary:        %{summary}
 %generate_buildrequires
 # Keep only those extras which you actually want to package or use during tests
 %pyproject_buildrequires -x test
-%cargo_generate_buildrequires
+# pyo3 is an *optional* crate, pulled in only by the "python-bindings" feature
+# that [tool.maturin] builds with. Pass -f so its crate BuildRequires (and
+# pyo3's own deps) are emitted and installed before maturin runs cargo metadata.
+%cargo_generate_buildrequires -f python-bindings
 
 
 %build
