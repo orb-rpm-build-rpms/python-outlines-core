@@ -62,7 +62,11 @@ export RUSTFLAGS='%{build_rustflags}'
 
 
 %check
-%pyproject_check_import
+# The kernels.{mlx,numpy,torch} submodules are optional accelerator backends
+# that import mlx / numba / torch respectively; those frameworks are only
+# present when the user has installed that backend, so skip them in the
+# build-time import check.
+%pyproject_check_import -e 'outlines_core.kernels.*'
 
 
 %files -n python3-outlines-core -f %{pyproject_files}
